@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const CACHE_NAME = `poses-cache-${CACHE_VERSION}`;
 
 const APP_SHELL = [
@@ -10,7 +10,9 @@ const APP_SHELL = [
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
-  "./icons/icon-512-maskable.png"
+  "./icons/icon-512-maskable.png",
+  "./icons/logo-white.png",
+  "./icons/logo-black.png"
 ];
 
 self.addEventListener("install", (event) => {

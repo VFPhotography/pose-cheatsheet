@@ -77,6 +77,7 @@ async function ensureSeeded() {
       name: p.name,
       direction: p.direction,
       technique: p.technique,
+      focal: p.focal || null,
       photo: null,
       favorite: false,
       custom: false,
@@ -84,6 +85,53 @@ async function ensureSeeded() {
     });
   }
   await setMeta("seeded", true);
+}
+
+// Comble le champ focal pour les poses de base déjà installées avant cette mise à jour.
+async function migrateFocalData() {
+  const done = await getMeta("focal-migrated");
+  if (done && done.value) return;
+  const all = await getAllPoses();
+  const byKey = {};
+  for (const s of SEED_POSES) byKey[`${s.cat}|${s.sub}|${s.name}`] = s.focal;
+  for (const p of all) {
+    if (!p.custom && !p.focal) {
+      const key = `${p.cat}|${p.sub}|${p.name}`;
+      if (byKey[key]) {
+        p.focal = byKey[key];
+        await putPose(p);
+      }
+    }
+  }
+  await setMeta("focal-migrated", true);
+}
+
+// ---------- Équipement (optionnel) ----------
+async function getEquipment() {
+  const meta = await getMeta("equipment");
+  return meta && meta.value ? meta.value : null; // null = pas encore configuré
+}
+async function saveEquipment(lenses) {
+  await setMeta("equipment", lenses); // lenses: [] autorisé (configuré mais vide)
+}
+
+// coverage: null (pas de matériel configuré ou pose sans focale), "covered", "partial", "none"
+function poseCoverage(pose, lenses) {
+  if (!lenses || !pose.focal) return null;
+  const [pMin, pMax] = pose.focal;
+  let bestPartial = false;
+  for (const l of lenses) {
+    if (l.minMM <= pMin && l.maxMM >= pMax) return "covered";
+    if (l.maxMM >= pMin && l.minMM <= pMax) bestPartial = true;
+  }
+  return bestPartial ? "partial" : "none";
+}
+
+function coverageBadge(status) {
+  if (status === "covered") return `<span class="gear-badge gear-ok" title="Couvert par ton matériel">🎒 ✓</span>`;
+  if (status === "partial") return `<span class="gear-badge gear-partial" title="Partiellement couvert">🎒 ~</span>`;
+  if (status === "none") return `<span class="gear-badge gear-none" title="Non couvert par ton matériel">🎒 ✕</span>`;
+  return "";
 }
 
 // ---------- Helpers ----------
@@ -136,6 +184,7 @@ function currentRoute() {
 window.addEventListener("hashchange", render);
 window.addEventListener("DOMContentLoaded", async () => {
   await ensureSeeded();
+  await migrateFocalData();
   render();
   registerSW();
 });
@@ -156,6 +205,8 @@ async function render() {
     await renderFavorites();
   } else if (parts[0] === "recherche") {
     await renderSearch();
+  } else if (parts[0] === "materiel") {
+    await renderEquipment();
   } else {
     await renderHome();
   }
@@ -167,7 +218,10 @@ function topbar(title, opts = {}) {
   const backBtn = opts.back
     ? `<button class="back-btn" onclick="history.back()">←</button>`
     : "";
-  return `<div class="topbar">${backBtn}<h1>${escapeHtml(title)}</h1></div>`;
+  const heading = opts.logo
+    ? `<img class="brand-logo" src="icons/logo-white.png" alt="Victor Fernet Photographie">`
+    : `<h1>${escapeHtml(title)}</h1>`;
+  return `<div class="topbar">${backBtn}${heading}</div>`;
 }
 
 // ---------- Views ----------
@@ -183,7 +237,7 @@ async function renderHome() {
   }).join("");
 
   appEl.innerHTML = `
-    ${topbar("Poses")}
+    ${topbar("Poses", { logo: true })}
     <div class="search-wrap">
       <input class="search-input" id="home-search" type="text" placeholder="Rechercher une pose..." />
     </div>
@@ -202,6 +256,7 @@ async function renderHome() {
 async function renderSearch() {
   const q = (sessionStorage.getItem("searchQuery") || "").toLowerCase();
   const all = await getAllPoses();
+  const lenses = await getEquipment();
   const results = all.filter((p) =>
     p.name.toLowerCase().includes(q) ||
     (p.direction || "").toLowerCase().includes(q) ||
@@ -212,7 +267,7 @@ async function renderSearch() {
     <div class="search-wrap">
       <input class="search-input" id="home-search" type="text" placeholder="Rechercher une pose..." value="${escapeHtml(q)}" />
     </div>
-    ${results.length ? `<div class="pose-grid">${results.map(poseCardHtml).join("")}</div>` : emptyState("🔍", "Aucun résultat")}
+    ${results.length ? `<div class="pose-grid">${results.map((p) => poseCardHtml(p, lenses)).join("")}</div>` : emptyState("🔍", "Aucun résultat")}
   `;
   document.getElementById("home-search").addEventListener("input", (e) => {
     sessionStorage.setItem("searchQuery", e.target.value.trim());
@@ -241,14 +296,15 @@ async function renderSubcats(catId) {
   `;
 }
 
-function poseCardHtml(p) {
+function poseCardHtml(p, lenses) {
   const thumb = p.photo
     ? `<img src="${p.photo}" alt="">`
     : `<span>📷</span>`;
+  const badge = coverageBadge(poseCoverage(p, lenses));
   return `<a class="pose-card" href="#/pose/${p.id}">
     <button class="fav-btn" onclick="event.preventDefault();event.stopPropagation();toggleFavorite(${p.id})">${p.favorite ? "★" : "☆"}</button>
     <div class="thumb">${thumb}</div>
-    <div class="info"><div class="name">${escapeHtml(p.name)}</div></div>
+    <div class="info"><div class="name">${escapeHtml(p.name)}</div>${badge}</div>
   </a>`;
 }
 
@@ -261,20 +317,22 @@ async function renderPoseList(catId, subId) {
   const sub = subById(cat, subId);
   if (!cat || !sub) { location.hash = "#/"; return; }
   const all = await getAllPoses();
+  const lenses = await getEquipment();
   const poses = all.filter((p) => p.cat === catId && p.sub === subId);
   appEl.innerHTML = `
     ${topbar(sub.label, { back: true })}
-    ${poses.length ? `<div class="pose-grid">${poses.map(poseCardHtml).join("")}</div>` : emptyState("📷", "Aucune pose ici pour l'instant")}
+    ${poses.length ? `<div class="pose-grid">${poses.map((p) => poseCardHtml(p, lenses)).join("")}</div>` : emptyState("📷", "Aucune pose ici pour l'instant")}
     <button class="fab" onclick="location.hash='#/add/${catId}/${subId}'">+</button>
   `;
 }
 
 async function renderFavorites() {
   const all = await getAllPoses();
+  const lenses = await getEquipment();
   const favs = all.filter((p) => p.favorite);
   appEl.innerHTML = `
     ${topbar("Favoris")}
-    ${favs.length ? `<div class="pose-grid">${favs.map(poseCardHtml).join("")}</div>` : emptyState("★", "Aucun favori pour l'instant")}
+    ${favs.length ? `<div class="pose-grid">${favs.map((p) => poseCardHtml(p, lenses)).join("")}</div>` : emptyState("★", "Aucun favori pour l'instant")}
   `;
 }
 
@@ -284,6 +342,21 @@ async function renderPoseDetail(id) {
   const cat = catById(p.cat);
   const sub = subById(cat, p.sub);
   const photo = p.photo ? `<img src="${p.photo}" alt="">` : `<span>📷</span>`;
+  const lenses = await getEquipment();
+  const status = poseCoverage(p, lenses);
+  let gearBlock = "";
+  if (status) {
+    const texts = {
+      covered: { icon: "✅", text: "Tu as un objectif adapté à cette pose." },
+      partial: { icon: "⚠️", text: "Ton matériel couvre une partie de la focale recommandée." },
+      none: { icon: "❌", text: "Aucun de tes objectifs ne couvre cette focale." }
+    };
+    const t = texts[status];
+    gearBlock = `<div class="card-block">
+      <div class="eyebrow">🎒 Matériel</div>
+      <p>${t.icon} ${t.text}</p>
+    </div>`;
+  }
   appEl.innerHTML = `
     ${topbar(sub ? sub.label : "Pose", { back: true })}
     <div class="detail">
@@ -297,6 +370,7 @@ async function renderPoseDetail(id) {
         <div class="eyebrow">📷 Technique</div>
         <p>${escapeHtml(p.technique || "—")}</p>
       </div>
+      ${gearBlock}
       <div class="detail-actions">
         <button class="btn btn-secondary" onclick="toggleFavorite(${p.id}, true)">${p.favorite ? "★ Retirer des favoris" : "☆ Ajouter aux favoris"}</button>
       </div>
@@ -424,12 +498,96 @@ function renderBottomNav() {
   const activeHome = parts.length === 0 || parts[0] === "cat" || parts[0] === "pose" || parts[0] === "recherche";
   const activeFav = parts[0] === "favoris";
   const activeAdd = parts[0] === "add" || parts[0] === "edit";
+  const activeGear = parts[0] === "materiel";
   const nav = document.getElementById("bottom-nav");
   nav.innerHTML = `
     <a class="nav-item ${activeHome ? "active" : ""}" href="#/"><span class="icon">🏠</span>Accueil</a>
     <a class="nav-item ${activeFav ? "active" : ""}" href="#/favoris"><span class="icon">★</span>Favoris</a>
     <a class="nav-item ${activeAdd ? "active" : ""}" href="#/add"><span class="icon">＋</span>Ajouter</a>
+    <a class="nav-item ${activeGear ? "active" : ""}" href="#/materiel"><span class="icon">🎒</span>Matériel</a>
   `;
+}
+
+async function renderEquipment() {
+  const owned = (await getEquipment()) || [];
+  const ownedIds = new Set(owned.filter((l) => l.preset).map((l) => l.presetId));
+  const customLenses = owned.filter((l) => !l.preset);
+
+  const presetRows = LENS_PRESETS.map((preset) => {
+    const checked = ownedIds.has(preset.id) ? "checked" : "";
+    return `<label class="gear-row">
+      <input type="checkbox" data-preset-id="${preset.id}" ${checked}>
+      <span>${escapeHtml(preset.label)}</span>
+    </label>`;
+  }).join("");
+
+  const customRows = customLenses.map((l, i) => `
+    <div class="gear-row gear-custom">
+      <span>${escapeHtml(l.label)} (${l.minMM}-${l.maxMM}mm)</span>
+      <button type="button" class="gear-remove" data-remove-custom="${i}">✕</button>
+    </div>
+  `).join("");
+
+  appEl.innerHTML = `
+    ${topbar("Mon matériel", { back: false })}
+    <div class="detail">
+      <div class="card-block">
+        <p>Facultatif : indique les objectifs que tu possèdes pour voir en un coup d'œil si tu as le bon matériel pour chaque pose. Tu peux ignorer cette page.</p>
+      </div>
+      <div class="section-title" style="padding-left:0;">Objectifs courants</div>
+      <div id="preset-list">${presetRows}</div>
+      <div class="section-title" style="padding-left:0;">Objectifs personnalisés</div>
+      <div id="custom-list">${customRows || '<p style="color:var(--text-dim);font-size:14px;">Aucun pour l\'instant.</p>'}</div>
+      <button type="button" class="btn btn-secondary" id="add-custom-btn">+ Ajouter un objectif personnalisé</button>
+      <div id="custom-form" style="display:none;" class="card-block">
+        <div class="field"><label>Nom</label><input type="text" id="cl-label" placeholder="Ex: 135mm f/1.8"></div>
+        <div class="field"><label>Focale min (mm)</label><input type="text" inputmode="numeric" id="cl-min" placeholder="Ex: 135"></div>
+        <div class="field"><label>Focale max (mm)</label><input type="text" inputmode="numeric" id="cl-max" placeholder="Ex: 135"></div>
+        <button type="button" class="btn btn-primary" id="cl-save">Ajouter</button>
+      </div>
+      <div class="detail-actions" style="margin-top:16px;">
+        <button type="button" class="btn btn-primary" id="gear-save">Enregistrer</button>
+      </div>
+    </div>
+  `;
+
+  let localCustom = customLenses.slice();
+
+  function collectAndSave() {
+    const presetChecked = Array.from(document.querySelectorAll("#preset-list input[type=checkbox]:checked"))
+      .map((el) => el.dataset.presetId);
+    const presetLenses = LENS_PRESETS.filter((p) => presetChecked.includes(p.id))
+      .map((p) => ({ preset: true, presetId: p.id, label: p.label, minMM: p.minMM, maxMM: p.maxMM }));
+    return [...presetLenses, ...localCustom];
+  }
+
+  document.getElementById("add-custom-btn").addEventListener("click", () => {
+    document.getElementById("custom-form").style.display = "block";
+  });
+
+  document.getElementById("cl-save").addEventListener("click", () => {
+    const label = document.getElementById("cl-label").value.trim();
+    const min = parseInt(document.getElementById("cl-min").value, 10);
+    const max = parseInt(document.getElementById("cl-max").value, 10);
+    if (!label || isNaN(min) || isNaN(max)) { alert("Renseigne le nom et les focales."); return; }
+    localCustom.push({ preset: false, label, minMM: min, maxMM: max });
+    saveEquipment(collectAndSave());
+    renderEquipment();
+  });
+
+  document.querySelectorAll("[data-remove-custom]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const idx = Number(btn.dataset.removeCustom);
+      localCustom.splice(idx, 1);
+      saveEquipment(collectAndSave());
+      renderEquipment();
+    });
+  });
+
+  document.getElementById("gear-save").addEventListener("click", async () => {
+    await saveEquipment(collectAndSave());
+    location.hash = "#/";
+  });
 }
 
 function registerSW() {

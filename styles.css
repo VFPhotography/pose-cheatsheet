@@ -51,6 +51,12 @@ button { font-family: inherit; }
   font-weight: 700;
 }
 
+.brand-logo {
+  height: 34px;
+  width: auto;
+  display: block;
+}
+
 .back-btn {
   background: var(--surface);
   border: none;
@@ -152,6 +158,43 @@ button { font-family: inherit; }
 
 .pose-card .info { padding: 10px 12px 12px; }
 .pose-card .name { font-weight: 600; font-size: 14px; line-height: 1.3; }
+
+.gear-badge {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+.gear-ok { background: rgba(120, 190, 120, 0.15); color: #86c98a; }
+.gear-partial { background: rgba(201, 162, 77, 0.18); color: var(--accent); }
+.gear-none { background: rgba(217, 97, 79, 0.15); color: var(--danger); }
+
+.gear-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 4px;
+  border-bottom: 1px solid #232733;
+  font-size: 15px;
+}
+.gear-row input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  order: -1;
+  margin-right: 4px;
+}
+.gear-row label, .gear-row span { flex: 1; }
+.gear-custom { justify-content: space-between; }
+.gear-remove {
+  background: none;
+  border: none;
+  color: var(--danger);
+  font-size: 16px;
+  padding: 4px 8px;
+}
 
 .fav-btn {
   position: absolute;
