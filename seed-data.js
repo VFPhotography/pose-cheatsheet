@@ -6,7 +6,7 @@ const CATEGORIES = [
   {
     id: "mariage",
     label: "Mariage",
-    icon: "💍",
+    icon: "rings",
     subcategories: [
       { id: "preparatifs", label: "Préparatifs" },
       { id: "ceremonie", label: "Cérémonie" },
@@ -19,7 +19,7 @@ const CATEGORIES = [
   {
     id: "couple",
     label: "Couple",
-    icon: "💞",
+    icon: "heart",
     subcategories: [
       { id: "classiques", label: "Poses classiques" },
       { id: "mouvement", label: "En mouvement" },
@@ -30,7 +30,7 @@ const CATEGORIES = [
   {
     id: "famille",
     label: "Famille",
-    icon: "👨‍👩‍👧‍👦",
+    icon: "people",
     subcategories: [
       { id: "multigen", label: "Groupe multigénérationnel" },
       { id: "enfants", label: "Enfants" },
@@ -41,7 +41,7 @@ const CATEGORIES = [
   {
     id: "corporate",
     label: "Corporate",
-    icon: "💼",
+    icon: "briefcase",
     subcategories: [
       { id: "trombinoscope", label: "Portraits / trombinoscope" },
       { id: "atelier", label: "Ambiance travail / atelier" },

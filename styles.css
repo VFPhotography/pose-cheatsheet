@@ -1,13 +1,15 @@
 :root {
-  --bg: #12141a;
-  --surface: #1b1e26;
-  --surface-2: #242833;
-  --text: #f2f3f5;
-  --text-dim: #a4a9b5;
-  --accent: #c9a24d;
-  --accent-dim: #8a7238;
-  --danger: #d9614f;
+  --bg: #0d0d0d;
+  --surface: #161616;
+  --surface-2: #1f1f1f;
+  --text: #f5f5f3;
+  --text-dim: #8f8c86;
+  --accent: #ffffff;
+  --accent-text: #0d0d0d;
+  --border: #2a2a2a;
+  --danger: #c96b5c;
   --radius: 14px;
+  --heading-font: Georgia, "Times New Roman", serif;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -32,6 +34,11 @@ html, body {
 
 a { color: inherit; text-decoration: none; }
 button { font-family: inherit; }
+svg { flex-shrink: 0; }
+
+.icon { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.icon-sm { width: 16px; height: 16px; }
+.icon-lg { width: 28px; height: 28px; }
 
 .topbar {
   position: sticky;
@@ -45,26 +52,26 @@ button { font-family: inherit; }
 }
 
 .topbar h1 {
-  font-size: 20px;
+  font-family: var(--heading-font);
+  font-size: 21px;
   margin: 0;
   flex: 1;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .brand-logo {
-  height: 34px;
+  height: 32px;
   width: auto;
   display: block;
 }
 
 .back-btn {
   background: var(--surface);
-  border: none;
+  border: 1px solid var(--border);
   color: var(--text);
   width: 38px;
   height: 38px;
   border-radius: 10px;
-  font-size: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -74,11 +81,23 @@ button { font-family: inherit; }
   padding: 0 16px 12px;
 }
 
+.search-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.search-input-wrap .icon {
+  position: absolute;
+  left: 14px;
+  color: var(--text-dim);
+  pointer-events: none;
+}
+
 .search-input {
   width: 100%;
-  padding: 12px 14px;
+  padding: 12px 14px 12px 40px;
   border-radius: 12px;
-  border: 1px solid #2c3140;
+  border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
   font-size: 15px;
@@ -95,18 +114,18 @@ button { font-family: inherit; }
 .tile {
   background: var(--surface);
   border-radius: var(--radius);
-  padding: 18px 14px;
+  padding: 20px 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  min-height: 96px;
+  gap: 12px;
+  min-height: 104px;
   justify-content: center;
-  border: 1px solid #262a35;
+  border: 1px solid var(--border);
 }
 
-.tile .emoji { font-size: 26px; }
-.tile .label { font-weight: 600; font-size: 16px; }
-.tile .count { color: var(--text-dim); font-size: 13px; }
+.tile .icon { color: var(--text); width: 26px; height: 26px; stroke-width: 1.5; }
+.tile .label { font-family: var(--heading-font); font-weight: 600; font-size: 17px; }
+.tile .count { color: var(--text-dim); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; }
 
 .list {
   display: flex;
@@ -122,7 +141,7 @@ button { font-family: inherit; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border: 1px solid #262a35;
+  border: 1px solid var(--border);
 }
 .subcat-row .label { font-weight: 600; font-size: 16px; }
 .subcat-row .count { color: var(--text-dim); font-size: 13px; }
@@ -139,7 +158,7 @@ button { font-family: inherit; }
   background: var(--surface);
   border-radius: var(--radius);
   overflow: hidden;
-  border: 1px solid #262a35;
+  border: 1px solid var(--border);
   position: relative;
 }
 
@@ -151,25 +170,29 @@ button { font-family: inherit; }
   align-items: center;
   justify-content: center;
   color: var(--text-dim);
-  font-size: 30px;
   overflow: hidden;
 }
 .pose-card .thumb img { width: 100%; height: 100%; object-fit: cover; }
+.pose-card .thumb .icon { width: 30px; height: 30px; stroke-width: 1.3; }
 
 .pose-card .info { padding: 10px 12px 12px; }
 .pose-card .name { font-weight: 600; font-size: 14px; line-height: 1.3; }
 
 .gear-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   margin-top: 6px;
   font-size: 11px;
   padding: 2px 7px;
   border-radius: 8px;
   font-weight: 600;
+  border: 1px solid var(--border);
 }
-.gear-ok { background: rgba(120, 190, 120, 0.15); color: #86c98a; }
-.gear-partial { background: rgba(201, 162, 77, 0.18); color: var(--accent); }
-.gear-none { background: rgba(217, 97, 79, 0.15); color: var(--danger); }
+.gear-badge .icon { width: 12px; height: 12px; }
+.gear-ok { color: var(--text); border-color: var(--text); }
+.gear-partial { color: var(--text-dim); }
+.gear-none { color: var(--danger); border-color: var(--danger); }
 
 .gear-row {
   display: flex;
@@ -177,7 +200,7 @@ button { font-family: inherit; }
   justify-content: space-between;
   gap: 10px;
   padding: 12px 4px;
-  border-bottom: 1px solid #232733;
+  border-bottom: 1px solid var(--border);
   font-size: 15px;
 }
 .gear-row input[type="checkbox"] {
@@ -185,6 +208,7 @@ button { font-family: inherit; }
   height: 20px;
   order: -1;
   margin-right: 4px;
+  accent-color: var(--accent);
 }
 .gear-row label, .gear-row span { flex: 1; }
 .gear-custom { justify-content: space-between; }
@@ -192,25 +216,25 @@ button { font-family: inherit; }
   background: none;
   border: none;
   color: var(--danger);
-  font-size: 16px;
   padding: 4px 8px;
+  display: flex;
 }
 
 .fav-btn {
   position: absolute;
   top: 8px;
   right: 8px;
-  background: rgba(18,20,26,0.65);
+  background: rgba(13,13,13,0.65);
   border: none;
   width: 32px;
   height: 32px;
   border-radius: 50%;
   color: var(--accent);
-  font-size: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
+.fav-btn .icon { width: 17px; height: 17px; }
 
 .detail {
   padding: 4px 16px 16px;
@@ -225,30 +249,34 @@ button { font-family: inherit; }
   align-items: center;
   justify-content: center;
   color: var(--text-dim);
-  font-size: 46px;
   overflow: hidden;
   margin-bottom: 16px;
-  border: 1px solid #262a35;
+  border: 1px solid var(--border);
 }
 .detail .photo img { width: 100%; height: 100%; object-fit: cover; }
+.detail .photo .icon { width: 44px; height: 44px; stroke-width: 1.2; }
 
-.detail h2 { font-size: 22px; margin: 0 0 14px; }
+.detail h2 { font-family: var(--heading-font); font-size: 23px; font-weight: 600; margin: 0 0 14px; }
 
 .card-block {
   background: var(--surface);
   border-radius: var(--radius);
   padding: 14px 16px;
   margin-bottom: 12px;
-  border: 1px solid #262a35;
+  border: 1px solid var(--border);
 }
 .card-block .eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--accent);
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
   font-weight: 700;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
+.card-block .eyebrow .icon { width: 15px; height: 15px; color: var(--text-dim); }
 .card-block p { margin: 0; font-size: 15px; line-height: 1.5; }
 
 .detail-actions {
@@ -267,10 +295,11 @@ button { font-family: inherit; }
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 7px;
 }
-.btn-primary { background: var(--accent); color: #12141a; }
-.btn-secondary { background: var(--surface); color: var(--text); border: 1px solid #2c3140; }
+.btn .icon { width: 17px; height: 17px; }
+.btn-primary { background: var(--accent); color: var(--accent-text); }
+.btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
 .btn-danger { background: transparent; color: var(--danger); border: 1px solid #3a2622; }
 
 .empty-state {
@@ -278,7 +307,7 @@ button { font-family: inherit; }
   text-align: center;
   color: var(--text-dim);
 }
-.empty-state .emoji { font-size: 40px; margin-bottom: 10px; }
+.empty-state .icon { width: 34px; height: 34px; margin-bottom: 12px; stroke-width: 1.3; }
 
 .bottom-nav {
   position: fixed;
@@ -286,9 +315,9 @@ button { font-family: inherit; }
   left: 0;
   right: 0;
   background: var(--surface);
-  border-top: 1px solid #262a35;
+  border-top: 1px solid var(--border);
   display: flex;
-  padding: 8px 8px calc(8px + var(--safe-bottom));
+  padding: 10px 8px calc(10px + var(--safe-bottom));
   z-index: 20;
 }
 
@@ -297,14 +326,17 @@ button { font-family: inherit; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 5px;
   padding: 6px 0;
   color: var(--text-dim);
-  font-size: 11px;
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
   border-radius: 10px;
 }
-.nav-item .icon { font-size: 20px; }
-.nav-item.active { color: var(--accent); }
+.nav-item .icon { width: 20px; height: 20px; }
+.nav-item.active { color: var(--text); }
+.nav-item.active .icon { color: var(--accent); stroke-width: 1.9; }
 
 form.pose-form {
   padding: 4px 16px 16px;
@@ -327,7 +359,7 @@ form.pose-form {
   width: 100%;
   padding: 12px 14px;
   border-radius: 12px;
-  border: 1px solid #2c3140;
+  border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
   font-size: 15px;
@@ -345,21 +377,21 @@ form.pose-form {
   height: 84px;
   border-radius: 12px;
   background: var(--surface);
-  border: 1px dashed #3a3f4d;
+  border: 1px dashed var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text-dim);
-  font-size: 24px;
   overflow: hidden;
   flex-shrink: 0;
 }
 .photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+.photo-preview .icon { width: 26px; height: 26px; }
 
 .photo-actions { display: flex; flex-direction: column; gap: 8px; flex: 1; }
 .photo-actions label {
   background: var(--surface);
-  border: 1px solid #2c3140;
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 10px 12px;
   text-align: center;
@@ -371,11 +403,11 @@ form.pose-form {
 
 .section-title {
   padding: 12px 16px 4px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
 }
 
 .offline-banner {
@@ -389,17 +421,17 @@ form.pose-form {
 .fab {
   position: fixed;
   right: 16px;
-  bottom: calc(76px + var(--safe-bottom));
+  bottom: calc(80px + var(--safe-bottom));
   width: 54px;
   height: 54px;
   border-radius: 50%;
   background: var(--accent);
-  color: #12141a;
+  color: var(--accent-text);
   border: none;
-  font-size: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.5);
   z-index: 15;
 }
+.fab .icon { width: 24px; height: 24px; stroke-width: 2; }

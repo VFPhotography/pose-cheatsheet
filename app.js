@@ -1,3 +1,31 @@
+// ---------- Icônes (SVG inline, pas d'emoji) ----------
+const ICON_PATHS = {
+  rings: '<circle cx="9" cy="14" r="5.2"/><circle cx="15" cy="14" r="5.2"/>',
+  heart: '<path d="M12 20.5c-4.8-3-9-6.6-9-11A5 5 0 0 1 12 6.2 5 5 0 0 1 21 9.5c0 4.4-4.2 8-9 11z"/>',
+  people: '<circle cx="8" cy="7.5" r="2.6"/><circle cx="16" cy="7.5" r="2.6"/><path d="M3 20c0-3.3 2.2-5.5 5-5.5s5 2.2 5 5.5M11 20c0-3.3 2.2-5.5 5-5.5s5 2.2 5 5.5"/>',
+  briefcase: '<rect x="3.5" y="8" width="17" height="11" rx="1.6"/><path d="M8.5 8V6.2A1.7 1.7 0 0 1 10.2 4.5h3.6A1.7 1.7 0 0 1 15.5 6.2V8"/><path d="M3.5 13h17"/>',
+  home: '<path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h12v-9"/>',
+  star: '<path d="M12 4.5 14.6 10l6 .9-4.3 4.2 1 6-5.3-2.8-5.3 2.8 1-6L3.4 10.9l6-.9z"/>',
+  starFilled: '<path d="M12 4.5 14.6 10l6 .9-4.3 4.2 1 6-5.3-2.8-5.3 2.8 1-6L3.4 10.9l6-.9z" fill="currentColor"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  backpack: '<path d="M8 8V6a4 4 0 0 1 8 0v2"/><rect x="5" y="8" width="14" height="12" rx="2"/><path d="M9 12h.01M15 12h.01"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/>',
+  camera: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7 9.6 4.4A1.6 1.6 0 0 1 11 3.5h2a1.6 1.6 0 0 1 1.4.9L16 7"/><circle cx="12" cy="13.5" r="3.6"/>',
+  speech: '<path d="M4 5h16v11H8l-4 4z"/>',
+  pencil: '<path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M14 6.5l3.5 3.5"/>',
+  trash: '<path d="M5 7h14M9 7V5a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 5v2M7 7l1 13h8l1-13"/>',
+  checkCircle: '<circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.3 2.3 2.3 4.7-4.9"/>',
+  alertTriangle: '<path d="M12 4.5 21 19H3z"/><path d="M12 10v4"/><circle cx="12" cy="16.6" r=".2" fill="currentColor" stroke-width="2"/>',
+  xCircle: '<circle cx="12" cy="12" r="8.5"/><path d="m9 9 6 6M15 9l-6 6"/>',
+  arrowLeft: '<path d="M19 12H5"/><path d="m11 6-6 6 6 6"/>',
+  chevronRight: '<path d="m9 6 6 6-6 6"/>'
+};
+
+function icon(name, cls = "icon") {
+  const inner = ICON_PATHS[name] || "";
+  return `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+}
+
 // ---------- IndexedDB wrapper ----------
 const DB_NAME = "poses-db";
 const DB_VERSION = 1;
@@ -128,9 +156,9 @@ function poseCoverage(pose, lenses) {
 }
 
 function coverageBadge(status) {
-  if (status === "covered") return `<span class="gear-badge gear-ok" title="Couvert par ton matériel">🎒 ✓</span>`;
-  if (status === "partial") return `<span class="gear-badge gear-partial" title="Partiellement couvert">🎒 ~</span>`;
-  if (status === "none") return `<span class="gear-badge gear-none" title="Non couvert par ton matériel">🎒 ✕</span>`;
+  if (status === "covered") return `<span class="gear-badge gear-ok" title="Couvert par ton matériel">${icon("checkCircle", "icon")} Couvert</span>`;
+  if (status === "partial") return `<span class="gear-badge gear-partial" title="Partiellement couvert">${icon("alertTriangle", "icon")} Partiel</span>`;
+  if (status === "none") return `<span class="gear-badge gear-none" title="Non couvert par ton matériel">${icon("xCircle", "icon")} Non couvert</span>`;
   return "";
 }
 
@@ -216,7 +244,7 @@ async function render() {
 
 function topbar(title, opts = {}) {
   const backBtn = opts.back
-    ? `<button class="back-btn" onclick="history.back()">←</button>`
+    ? `<button class="back-btn" onclick="history.back()">${icon("arrowLeft")}</button>`
     : "";
   const heading = opts.logo
     ? `<img class="brand-logo" src="icons/logo-white.png" alt="Victor Fernet Photographie">`
@@ -230,7 +258,7 @@ async function renderHome() {
   const tiles = CATEGORIES.map((c) => {
     const count = all.filter((p) => p.cat === c.id).length;
     return `<a class="tile" href="#/cat/${c.id}">
-      <span class="emoji">${c.icon}</span>
+      ${icon(c.icon)}
       <span class="label">${escapeHtml(c.label)}</span>
       <span class="count">${count} pose${count > 1 ? "s" : ""}</span>
     </a>`;
@@ -239,10 +267,13 @@ async function renderHome() {
   appEl.innerHTML = `
     ${topbar("Poses", { logo: true })}
     <div class="search-wrap">
-      <input class="search-input" id="home-search" type="text" placeholder="Rechercher une pose..." />
+      <div class="search-input-wrap">
+        ${icon("search")}
+        <input class="search-input" id="home-search" type="text" placeholder="Rechercher une pose..." />
+      </div>
     </div>
     <div class="grid">${tiles}</div>
-    <button class="fab" onclick="location.hash='#/add'">+</button>
+    <button class="fab" onclick="location.hash='#/add'">${icon("plus")}</button>
   `;
   document.getElementById("home-search").addEventListener("input", (e) => {
     const q = e.target.value.trim();
@@ -267,7 +298,7 @@ async function renderSearch() {
     <div class="search-wrap">
       <input class="search-input" id="home-search" type="text" placeholder="Rechercher une pose..." value="${escapeHtml(q)}" />
     </div>
-    ${results.length ? `<div class="pose-grid">${results.map((p) => poseCardHtml(p, lenses)).join("")}</div>` : emptyState("🔍", "Aucun résultat")}
+    ${results.length ? `<div class="pose-grid">${results.map((p) => poseCardHtml(p, lenses)).join("")}</div>` : emptyState("search", "Aucun résultat")}
   `;
   document.getElementById("home-search").addEventListener("input", (e) => {
     sessionStorage.setItem("searchQuery", e.target.value.trim());
@@ -286,30 +317,30 @@ async function renderSubcats(catId) {
         <div class="label">${escapeHtml(s.label)}</div>
         <div class="count">${count} pose${count > 1 ? "s" : ""}</div>
       </div>
-      <span class="chev">›</span>
+      <span class="chev">${icon("chevronRight", "icon icon-sm")}</span>
     </a>`;
   }).join("");
   appEl.innerHTML = `
-    ${topbar(cat.icon + " " + cat.label, { back: true })}
+    ${topbar(cat.label, { back: true })}
     <div class="list">${rows}</div>
-    <button class="fab" onclick="location.hash='#/add/${catId}'">+</button>
+    <button class="fab" onclick="location.hash='#/add/${catId}'">${icon("plus")}</button>
   `;
 }
 
 function poseCardHtml(p, lenses) {
   const thumb = p.photo
     ? `<img src="${p.photo}" alt="">`
-    : `<span>📷</span>`;
+    : icon("camera", "icon");
   const badge = coverageBadge(poseCoverage(p, lenses));
   return `<a class="pose-card" href="#/pose/${p.id}">
-    <button class="fav-btn" onclick="event.preventDefault();event.stopPropagation();toggleFavorite(${p.id})">${p.favorite ? "★" : "☆"}</button>
+    <button class="fav-btn" onclick="event.preventDefault();event.stopPropagation();toggleFavorite(${p.id})">${icon(p.favorite ? "starFilled" : "star", "icon")}</button>
     <div class="thumb">${thumb}</div>
     <div class="info"><div class="name">${escapeHtml(p.name)}</div>${badge}</div>
   </a>`;
 }
 
-function emptyState(emoji, text) {
-  return `<div class="empty-state"><div class="emoji">${emoji}</div><div>${escapeHtml(text)}</div></div>`;
+function emptyState(iconName, text) {
+  return `<div class="empty-state">${icon(iconName)}<div>${escapeHtml(text)}</div></div>`;
 }
 
 async function renderPoseList(catId, subId) {
@@ -321,8 +352,8 @@ async function renderPoseList(catId, subId) {
   const poses = all.filter((p) => p.cat === catId && p.sub === subId);
   appEl.innerHTML = `
     ${topbar(sub.label, { back: true })}
-    ${poses.length ? `<div class="pose-grid">${poses.map((p) => poseCardHtml(p, lenses)).join("")}</div>` : emptyState("📷", "Aucune pose ici pour l'instant")}
-    <button class="fab" onclick="location.hash='#/add/${catId}/${subId}'">+</button>
+    ${poses.length ? `<div class="pose-grid">${poses.map((p) => poseCardHtml(p, lenses)).join("")}</div>` : emptyState("camera", "Aucune pose ici pour l'instant")}
+    <button class="fab" onclick="location.hash='#/add/${catId}/${subId}'">${icon("plus")}</button>
   `;
 }
 
@@ -332,7 +363,7 @@ async function renderFavorites() {
   const favs = all.filter((p) => p.favorite);
   appEl.innerHTML = `
     ${topbar("Favoris")}
-    ${favs.length ? `<div class="pose-grid">${favs.map((p) => poseCardHtml(p, lenses)).join("")}</div>` : emptyState("★", "Aucun favori pour l'instant")}
+    ${favs.length ? `<div class="pose-grid">${favs.map((p) => poseCardHtml(p, lenses)).join("")}</div>` : emptyState("star", "Aucun favori pour l'instant")}
   `;
 }
 
@@ -341,20 +372,20 @@ async function renderPoseDetail(id) {
   if (!p) { location.hash = "#/"; return; }
   const cat = catById(p.cat);
   const sub = subById(cat, p.sub);
-  const photo = p.photo ? `<img src="${p.photo}" alt="">` : `<span>📷</span>`;
+  const photo = p.photo ? `<img src="${p.photo}" alt="">` : icon("camera", "icon");
   const lenses = await getEquipment();
   const status = poseCoverage(p, lenses);
   let gearBlock = "";
   if (status) {
     const texts = {
-      covered: { icon: "✅", text: "Tu as un objectif adapté à cette pose." },
-      partial: { icon: "⚠️", text: "Ton matériel couvre une partie de la focale recommandée." },
-      none: { icon: "❌", text: "Aucun de tes objectifs ne couvre cette focale." }
+      covered: { iconName: "checkCircle", text: "Tu as un objectif adapté à cette pose." },
+      partial: { iconName: "alertTriangle", text: "Ton matériel couvre une partie de la focale recommandée." },
+      none: { iconName: "xCircle", text: "Aucun de tes objectifs ne couvre cette focale." }
     };
     const t = texts[status];
     gearBlock = `<div class="card-block">
-      <div class="eyebrow">🎒 Matériel</div>
-      <p>${t.icon} ${t.text}</p>
+      <div class="eyebrow">${icon("backpack")} Matériel</div>
+      <p>${icon(t.iconName, "icon icon-sm")} ${t.text}</p>
     </div>`;
   }
   appEl.innerHTML = `
@@ -363,20 +394,20 @@ async function renderPoseDetail(id) {
       <div class="photo">${photo}</div>
       <h2>${escapeHtml(p.name)}</h2>
       <div class="card-block">
-        <div class="eyebrow">💬 Direction</div>
+        <div class="eyebrow">${icon("speech")} Direction</div>
         <p>${escapeHtml(p.direction || "—")}</p>
       </div>
       <div class="card-block">
-        <div class="eyebrow">📷 Technique</div>
+        <div class="eyebrow">${icon("camera")} Technique</div>
         <p>${escapeHtml(p.technique || "—")}</p>
       </div>
       ${gearBlock}
       <div class="detail-actions">
-        <button class="btn btn-secondary" onclick="toggleFavorite(${p.id}, true)">${p.favorite ? "★ Retirer des favoris" : "☆ Ajouter aux favoris"}</button>
+        <button class="btn btn-secondary" onclick="toggleFavorite(${p.id}, true)">${icon(p.favorite ? "starFilled" : "star")} ${p.favorite ? "Retirer des favoris" : "Ajouter aux favoris"}</button>
       </div>
       <div class="detail-actions">
-        <button class="btn btn-secondary" onclick="location.hash='#/edit/${p.id}'">✏️ Modifier</button>
-        <button class="btn btn-danger" onclick="confirmDelete(${p.id})">🗑 Supprimer</button>
+        <button class="btn btn-secondary" onclick="location.hash='#/edit/${p.id}'">${icon("pencil")} Modifier</button>
+        <button class="btn btn-danger" onclick="confirmDelete(${p.id})">${icon("trash")} Supprimer</button>
       </div>
     </div>
   `;
@@ -390,7 +421,7 @@ window.toggleFavorite = async function (id, rerenderDetail) {
   if (rerenderDetail) render();
   else {
     const btn = document.querySelector(`.pose-card[href="#/pose/${id}"] .fav-btn`);
-    if (btn) btn.textContent = p.favorite ? "★" : "☆";
+    if (btn) btn.innerHTML = icon(p.favorite ? "starFilled" : "star", "icon");
   }
 };
 
@@ -411,7 +442,7 @@ async function renderForm(editId, presetCat, presetSub) {
   } else if (presetSub) {
     pose.sub = presetSub;
   }
-  const catOptions = CATEGORIES.map((c) => `<option value="${c.id}" ${c.id === pose.cat ? "selected" : ""}>${c.icon} ${escapeHtml(c.label)}</option>`).join("");
+  const catOptions = CATEGORIES.map((c) => `<option value="${c.id}" ${c.id === pose.cat ? "selected" : ""}>${escapeHtml(c.label)}</option>`).join("");
 
   appEl.innerHTML = `
     ${topbar(isEdit ? "Modifier la pose" : "Nouvelle pose", { back: true })}
@@ -419,7 +450,7 @@ async function renderForm(editId, presetCat, presetSub) {
       <div class="field">
         <label>Photo</label>
         <div class="photo-picker">
-          <div class="photo-preview" id="photo-preview">${pose.photo ? `<img src="${pose.photo}">` : "📷"}</div>
+          <div class="photo-preview" id="photo-preview">${pose.photo ? `<img src="${pose.photo}">` : icon("camera", "icon")}</div>
           <div class="photo-actions">
             <label>Prendre une photo<input type="file" accept="image/*" capture="environment" id="photo-camera"></label>
             <label>Choisir dans la galerie<input type="file" accept="image/*" id="photo-gallery"></label>
@@ -501,10 +532,10 @@ function renderBottomNav() {
   const activeGear = parts[0] === "materiel";
   const nav = document.getElementById("bottom-nav");
   nav.innerHTML = `
-    <a class="nav-item ${activeHome ? "active" : ""}" href="#/"><span class="icon">🏠</span>Accueil</a>
-    <a class="nav-item ${activeFav ? "active" : ""}" href="#/favoris"><span class="icon">★</span>Favoris</a>
-    <a class="nav-item ${activeAdd ? "active" : ""}" href="#/add"><span class="icon">＋</span>Ajouter</a>
-    <a class="nav-item ${activeGear ? "active" : ""}" href="#/materiel"><span class="icon">🎒</span>Matériel</a>
+    <a class="nav-item ${activeHome ? "active" : ""}" href="#/">${icon("home")}Accueil</a>
+    <a class="nav-item ${activeFav ? "active" : ""}" href="#/favoris">${icon("star")}Favoris</a>
+    <a class="nav-item ${activeAdd ? "active" : ""}" href="#/add">${icon("plus")}Ajouter</a>
+    <a class="nav-item ${activeGear ? "active" : ""}" href="#/materiel">${icon("backpack")}Matériel</a>
   `;
 }
 
@@ -524,7 +555,7 @@ async function renderEquipment() {
   const customRows = customLenses.map((l, i) => `
     <div class="gear-row gear-custom">
       <span>${escapeHtml(l.label)} (${l.minMM}-${l.maxMM}mm)</span>
-      <button type="button" class="gear-remove" data-remove-custom="${i}">✕</button>
+      <button type="button" class="gear-remove" data-remove-custom="${i}">${icon("xCircle", "icon icon-sm")}</button>
     </div>
   `).join("");
 
