@@ -18,7 +18,8 @@ const ICON_PATHS = {
   alertTriangle: '<path d="M12 4.5 21 19H3z"/><path d="M12 10v4"/><circle cx="12" cy="16.6" r=".2" fill="currentColor" stroke-width="2"/>',
   xCircle: '<circle cx="12" cy="12" r="8.5"/><path d="m9 9 6 6M15 9l-6 6"/>',
   arrowLeft: '<path d="M19 12H5"/><path d="m11 6-6 6 6 6"/>',
-  chevronRight: '<path d="m9 6 6 6-6 6"/>'
+  chevronRight: '<path d="m9 6 6 6-6 6"/>',
+  soloperson: '<circle cx="12" cy="7.5" r="3.6"/><path d="M5 20c0-4 3.1-6.5 7-6.5s7 2.5 7 6.5"/>'
 };
 
 function icon(name, cls = "icon") {
@@ -134,6 +135,50 @@ async function migrateFocalData() {
   await setMeta("focal-migrated", true);
 }
 
+// Ajoute les nouvelles poses de base (dont la catégorie "Personne seule") et complète les photos
+// manquantes sur les poses déjà installées avant cette mise à jour (illustrations Unsplash).
+async function migratePhotosAndNewPoses() {
+  const done = await getMeta("photos-migrated-v1");
+  if (done && done.value) return;
+  const all = await getAllPoses();
+  const existingKeys = new Set(all.map((p) => `${p.cat}|${p.sub}|${p.name}`));
+  const byKey = {};
+  for (const s of SEED_POSES) byKey[`${s.cat}|${s.sub}|${s.name}`] = s;
+
+  // Backfill photo sur les poses de base déjà présentes sans photo.
+  for (const p of all) {
+    if (!p.custom && !p.photo) {
+      const seed = byKey[`${p.cat}|${p.sub}|${p.name}`];
+      if (seed && seed.photo) {
+        p.photo = seed.photo;
+        await putPose(p);
+      }
+    }
+  }
+
+  // Ajoute les poses de base absentes (nouvelles poses + nouvelle catégorie "Personne seule").
+  const store = await tx("poses", "readwrite");
+  for (const s of SEED_POSES) {
+    const key = `${s.cat}|${s.sub}|${s.name}`;
+    if (!existingKeys.has(key)) {
+      store.add({
+        cat: s.cat,
+        sub: s.sub,
+        name: s.name,
+        direction: s.direction,
+        technique: s.technique,
+        focal: s.focal || null,
+        photo: s.photo || null,
+        favorite: false,
+        custom: false,
+        createdAt: Date.now()
+      });
+    }
+  }
+
+  await setMeta("photos-migrated-v1", true);
+}
+
 // ---------- Équipement (optionnel) ----------
 async function getEquipment() {
   const meta = await getMeta("equipment");
@@ -213,6 +258,7 @@ window.addEventListener("hashchange", render);
 window.addEventListener("DOMContentLoaded", async () => {
   await ensureSeeded();
   await migrateFocalData();
+  await migratePhotosAndNewPoses();
   render();
   registerSW();
 });

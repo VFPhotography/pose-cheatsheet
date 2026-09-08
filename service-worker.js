@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v3";
+const CACHE_VERSION = "v4";
 const CACHE_NAME = `poses-cache-${CACHE_VERSION}`;
 
 const APP_SHELL = [
@@ -38,7 +38,11 @@ self.addEventListener("fetch", (event) => {
       if (cached) return cached;
       return fetch(req)
         .then((res) => {
-          if (res && res.status === 200 && res.type === "basic") {
+          const cacheable =
+            res &&
+            ((res.status === 200 && res.type === "basic") ||
+              (res.type === "opaque" && req.destination === "image"));
+          if (cacheable) {
             const clone = res.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
           }
