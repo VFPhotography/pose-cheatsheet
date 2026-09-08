@@ -146,11 +146,13 @@ async function migratePhotosAndNewPoses() {
   const byKey = {};
   for (const s of SEED_POSES) byKey[`${s.cat}|${s.sub}|${s.name}`] = s;
 
-  // Backfill photo sur les poses de base déjà présentes sans photo.
+  // Synchronise la photo des poses de base (non personnalisées) sur celle de seed-data.js,
+  // qu'elle soit absente ou simplement différente (ex: correction d'une photo mal choisie).
+  // Les poses "custom" (ajoutées/éditées par l'utilisateur) ne sont jamais touchées.
   for (const p of all) {
-    if (!p.custom && !p.photo) {
+    if (!p.custom) {
       const seed = byKey[`${p.cat}|${p.sub}|${p.name}`];
-      if (seed && seed.photo) {
+      if (seed && seed.photo && seed.photo !== p.photo) {
         p.photo = seed.photo;
         await putPose(p);
       }
