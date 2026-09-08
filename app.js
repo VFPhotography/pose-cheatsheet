@@ -137,9 +137,10 @@ async function migrateFocalData() {
 
 // Ajoute les nouvelles poses de base (dont la catégorie "Personne seule") et complète les photos
 // manquantes sur les poses déjà installées avant cette mise à jour (illustrations Unsplash).
+// Volontairement sans "flag déjà fait" : la fonction est idempotente (elle ne touche que les poses
+// de base manquantes ou sans photo), donc elle peut tourner à chaque lancement pour absorber les
+// futurs ajouts de poses sans qu'on ait à penser à incrémenter une version de migration à chaque fois.
 async function migratePhotosAndNewPoses() {
-  const done = await getMeta("photos-migrated-v1");
-  if (done && done.value) return;
   const all = await getAllPoses();
   const existingKeys = new Set(all.map((p) => `${p.cat}|${p.sub}|${p.name}`));
   const byKey = {};
@@ -175,8 +176,6 @@ async function migratePhotosAndNewPoses() {
       });
     }
   }
-
-  await setMeta("photos-migrated-v1", true);
 }
 
 // ---------- Équipement (optionnel) ----------
