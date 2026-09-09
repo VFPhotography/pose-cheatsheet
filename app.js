@@ -140,11 +140,23 @@ async function migrateFocalData() {
 // Volontairement sans "flag déjà fait" : la fonction est idempotente (elle ne touche que les poses
 // de base manquantes ou sans photo), donc elle peut tourner à chaque lancement pour absorber les
 // futurs ajouts de poses sans qu'on ait à penser à incrémenter une version de migration à chaque fois.
+// Sous-catégories de base retirées de seed-data.js au fil des mises à jour : leurs poses non
+// personnalisées sont supprimées des appareils déjà installés pour éviter les orphelines
+// (ex: "famille/parent-enfant" fusionnée dans "maman-enfant" / "papa-enfant").
+const RETIRED_SUBCATS = [{ cat: "famille", sub: "parent-enfant" }];
+
 async function migratePhotosAndNewPoses() {
   const all = await getAllPoses();
   const existingKeys = new Set(all.map((p) => `${p.cat}|${p.sub}|${p.name}`));
   const byKey = {};
   for (const s of SEED_POSES) byKey[`${s.cat}|${s.sub}|${s.name}`] = s;
+
+  // Nettoie les poses de base appartenant à une sous-catégorie retirée (jamais les poses "custom").
+  for (const p of all) {
+    if (!p.custom && RETIRED_SUBCATS.some((r) => r.cat === p.cat && r.sub === p.sub)) {
+      await deletePose(p.id);
+    }
+  }
 
   // Synchronise la photo des poses de base (non personnalisées) sur celle de seed-data.js,
   // qu'elle soit absente ou simplement différente (ex: correction d'une photo mal choisie).
