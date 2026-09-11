@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v8";
+const CACHE_VERSION = "v9";
 const CACHE_NAME = `poses-cache-${CACHE_VERSION}`;
 
 const APP_SHELL = [
@@ -7,6 +7,7 @@ const APP_SHELL = [
   "./styles.css",
   "./app.js",
   "./seed-data.js",
+  "./inspiration-data.js",
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",

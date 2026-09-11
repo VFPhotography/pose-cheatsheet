@@ -19,7 +19,9 @@ const ICON_PATHS = {
   xCircle: '<circle cx="12" cy="12" r="8.5"/><path d="m9 9 6 6M15 9l-6 6"/>',
   arrowLeft: '<path d="M19 12H5"/><path d="m11 6-6 6 6 6"/>',
   chevronRight: '<path d="m9 6 6 6-6 6"/>',
-  soloperson: '<circle cx="12" cy="7.5" r="3.6"/><path d="M5 20c0-4 3.1-6.5 7-6.5s7 2.5 7 6.5"/>'
+  soloperson: '<circle cx="12" cy="7.5" r="3.6"/><path d="M5 20c0-4 3.1-6.5 7-6.5s7 2.5 7 6.5"/>',
+  sparkles: '<path d="M12 3.5c.5 3 1.8 4.3 4.8 4.8-3 .5-4.3 1.8-4.8 4.8-.5-3-1.8-4.3-4.8-4.8 3-.5 4.3-1.8 4.8-4.8Z"/><path d="M18.5 14c.3 1.6 1 2.3 2.6 2.6-1.6.3-2.3 1-2.6 2.6-.3-1.6-1-2.3-2.6-2.6 1.6-.3 2.3-1 2.6-2.6Z"/>',
+  externalLink: '<path d="M14 4h6v6"/><path d="M20 4 10 14"/><path d="M18 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5"/>'
 };
 
 function icon(name, cls = "icon") {
@@ -294,6 +296,8 @@ async function render() {
     await renderSearch();
   } else if (parts[0] === "materiel") {
     await renderEquipment();
+  } else if (parts[0] === "inspiration") {
+    await renderInspiration();
   } else {
     await renderHome();
   }
@@ -589,12 +593,35 @@ function renderBottomNav() {
   const activeFav = parts[0] === "favoris";
   const activeAdd = parts[0] === "add" || parts[0] === "edit";
   const activeGear = parts[0] === "materiel";
+  const activeInspi = parts[0] === "inspiration";
   const nav = document.getElementById("bottom-nav");
   nav.innerHTML = `
     <a class="nav-item ${activeHome ? "active" : ""}" href="#/">${icon("home")}Accueil</a>
     <a class="nav-item ${activeFav ? "active" : ""}" href="#/favoris">${icon("star")}Favoris</a>
     <a class="nav-item ${activeAdd ? "active" : ""}" href="#/add">${icon("plus")}Ajouter</a>
     <a class="nav-item ${activeGear ? "active" : ""}" href="#/materiel">${icon("backpack")}Matériel</a>
+    <a class="nav-item ${activeInspi ? "active" : ""}" href="#/inspiration">${icon("sparkles")}Inspiration</a>
+  `;
+}
+
+async function renderInspiration() {
+  const cards = INSPIRATION_GALLERIES.map((g) => `
+    <a class="inspi-card" href="${escapeHtml(g.url)}" target="_blank" rel="noopener">
+      <div class="inspi-card-body">
+        <div class="inspi-title">${escapeHtml(g.title)}</div>
+        <div class="inspi-meta">${escapeHtml(g.style)} · ${escapeHtml(g.location)}</div>
+        <div class="inspi-credit">Photo : ${escapeHtml(g.photographer)}</div>
+      </div>
+      <span class="chev">${icon("externalLink", "icon icon-sm")}</span>
+    </a>
+  `).join("");
+
+  appEl.innerHTML = `
+    ${topbar("Inspiration", {})}
+    <div class="inspi-intro">
+      <p>Une sélection de reportages de mariage réels publiés par <a href="${escapeHtml(INSPIRATION_SOURCE.siteUrl)}" target="_blank" rel="noopener">${escapeHtml(INSPIRATION_SOURCE.siteName)}</a>. Chaque lien ouvre la galerie originale sur leur site — les photos appartiennent à leurs photographes, crédités ci-dessous, et ne sont pas hébergées dans cette appli.</p>
+    </div>
+    <div class="list">${cards}</div>
   `;
 }
 
