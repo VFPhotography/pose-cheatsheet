@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v9";
+const CACHE_VERSION = "v10";
 const CACHE_NAME = `poses-cache-${CACHE_VERSION}`;
 
 const APP_SHELL = [

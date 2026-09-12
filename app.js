@@ -19,6 +19,7 @@ const ICON_PATHS = {
   xCircle: '<circle cx="12" cy="12" r="8.5"/><path d="m9 9 6 6M15 9l-6 6"/>',
   arrowLeft: '<path d="M19 12H5"/><path d="m11 6-6 6 6 6"/>',
   chevronRight: '<path d="m9 6 6 6-6 6"/>',
+  chevronLeft: '<path d="m15 6-6 6 6 6"/>',
   soloperson: '<circle cx="12" cy="7.5" r="3.6"/><path d="M5 20c0-4 3.1-6.5 7-6.5s7 2.5 7 6.5"/>',
   sparkles: '<path d="M12 3.5c.5 3 1.8 4.3 4.8 4.8-3 .5-4.3 1.8-4.8 4.8-.5-3-1.8-4.3-4.8-4.8 3-.5 4.3-1.8 4.8-4.8Z"/><path d="M18.5 14c.3 1.6 1 2.3 2.6 2.6-1.6.3-2.3 1-2.6 2.6-.3-1.6-1-2.3-2.6-2.6 1.6-.3 2.3-1 2.6-2.6Z"/>',
   externalLink: '<path d="M14 4h6v6"/><path d="M20 4 10 14"/><path d="M18 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5"/>'
@@ -276,10 +277,80 @@ window.addEventListener("DOMContentLoaded", async () => {
   await migratePhotosAndNewPoses();
   render();
   registerSW();
+  setupPoseSwipeNav();
 });
+
+// ---------- Navigation par swipe entre poses ----------
+// poseNavContext contient la séquence ordonnée (catégorie -> sous-catégorie -> poses) et
+// l'index de la pose actuellement affichée, uniquement quand on est sur une fiche pose.
+let poseNavContext = null;
+
+async function buildOrderedPoseSequence() {
+  const all = await getAllPoses();
+  const seq = [];
+  for (const cat of CATEGORIES) {
+    for (const sub of cat.subcategories) {
+      const matches = all
+        .filter((p) => p.cat === cat.id && p.sub === sub.id)
+        .sort((a, b) => a.id - b.id);
+      for (const p of matches) seq.push({ id: p.id, cat: cat.id, sub: sub.id });
+    }
+  }
+  return seq;
+}
+
+async function navigatePose(delta) {
+  if (!poseNavContext) return;
+  const { sequence, index } = poseNavContext;
+  const newIndex = index + delta;
+  if (newIndex < 0 || newIndex >= sequence.length) return;
+  const prevEntry = sequence[index];
+  const newEntry = sequence[newIndex];
+  history.replaceState(null, "", `#/pose/${newEntry.id}`);
+  await renderPoseDetail(newEntry.id, { prevCat: prevEntry.cat, prevSub: prevEntry.sub });
+  window.scrollTo(0, 0);
+}
+
+function setupPoseSwipeNav() {
+  let startX = 0, startY = 0, startTime = 0;
+  appEl.addEventListener("touchstart", (e) => {
+    if (!poseNavContext || !e.touches[0]) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    startTime = Date.now();
+  }, { passive: true });
+  appEl.addEventListener("touchend", (e) => {
+    if (!poseNavContext || !e.changedTouches[0]) return;
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    const dt = Date.now() - startTime;
+    if (dt > 800) return;
+    if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+      navigatePose(dx < 0 ? 1 : -1);
+    }
+  }, { passive: true });
+}
+
+let poseToastTimeout = null;
+function showPoseLocationToast(cat, sub) {
+  let el = document.getElementById("pose-location-toast");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "pose-location-toast";
+    el.className = "pose-toast";
+    document.body.appendChild(el);
+  }
+  el.innerHTML = `${icon(cat.icon, "icon icon-sm")}<span>${escapeHtml(cat.label)} · ${escapeHtml(sub.label)}</span>`;
+  el.classList.remove("show");
+  void el.offsetWidth;
+  el.classList.add("show");
+  clearTimeout(poseToastTimeout);
+  poseToastTimeout = setTimeout(() => el.classList.remove("show"), 1800);
+}
 
 async function render() {
   const parts = currentRoute();
+  if (parts[0] !== "pose") poseNavContext = null;
   if (parts[0] === "cat" && parts[1] && parts[2]) {
     await renderPoseList(parts[1], parts[2]);
   } else if (parts[0] === "cat" && parts[1]) {
@@ -430,7 +501,7 @@ async function renderFavorites() {
   `;
 }
 
-async function renderPoseDetail(id) {
+async function renderPoseDetail(id, navInfo) {
   const p = await getPose(id);
   if (!p) { location.hash = "#/"; return; }
   const cat = catById(p.cat);
@@ -438,6 +509,12 @@ async function renderPoseDetail(id) {
   const photo = p.photo ? `<img src="${p.photo}" alt="">` : icon("camera", "icon");
   const lenses = await getEquipment();
   const status = poseCoverage(p, lenses);
+
+  const sequence = await buildOrderedPoseSequence();
+  const seqIndex = sequence.findIndex((e) => e.id === id);
+  poseNavContext = seqIndex >= 0 ? { sequence, index: seqIndex } : null;
+  const hasPrev = seqIndex > 0;
+  const hasNext = seqIndex >= 0 && seqIndex < sequence.length - 1;
   let gearBlock = "";
   if (status) {
     const texts = {
@@ -451,10 +528,15 @@ async function renderPoseDetail(id) {
       <p>${icon(t.iconName, "icon icon-sm")} ${t.text}</p>
     </div>`;
   }
+  const navArrows = `
+    <button class="pose-nav-arrow left" ${hasPrev ? "" : "disabled"} onclick="navigatePose(-1)" aria-label="Pose précédente">${icon("chevronLeft")}</button>
+    <button class="pose-nav-arrow right" ${hasNext ? "" : "disabled"} onclick="navigatePose(1)" aria-label="Pose suivante">${icon("chevronRight")}</button>
+  `;
+
   appEl.innerHTML = `
     ${topbar(sub ? sub.label : "Pose", { back: true })}
     <div class="detail">
-      <div class="photo">${photo}</div>
+      <div class="photo">${photo}${navArrows}</div>
       <h2>${escapeHtml(p.name)}</h2>
       <div class="card-block">
         <div class="eyebrow">${icon("speech")} Direction</div>
@@ -474,7 +556,13 @@ async function renderPoseDetail(id) {
       </div>
     </div>
   `;
+
+  if (navInfo && cat && sub && (navInfo.prevCat !== p.cat || navInfo.prevSub !== p.sub)) {
+    showPoseLocationToast(cat, sub);
+  }
 }
+
+window.navigatePose = navigatePose;
 
 window.toggleFavorite = async function (id, rerenderDetail) {
   const p = await getPose(id);
